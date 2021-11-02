@@ -1,17 +1,8 @@
 #pragma once
 
-#include <atomic>
-#include <cstdio>
-#include <thread>
-#include <chrono>
+#include "Common.h"
 
-using namespace std::chrono_literals;
-
-using int64 = signed long long;
-using uint64 = unsigned long long;
-
-#define is_aligned(POINTER, BYTE_COUNT) \
-    (((uintptr_t)(const void *)(POINTER)) % (BYTE_COUNT) == 0)
+void TestCacheLine();
 
 constexpr auto RunTime = 5s;
 constexpr auto LoopTime = 50us;
@@ -37,9 +28,3 @@ private:
 
 // inline static thread_local ThreadLocal g_tl;
 extern thread_local ThreadLocal g_tl;
-
-void WriterMain();
-void ReaderMain(int id);
-void ReportThreadTest();
-
-extern volatile bool g_bGo;

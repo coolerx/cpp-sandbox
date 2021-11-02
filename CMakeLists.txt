@@ -8,7 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 include(CTest)
 enable_testing()
 
-set(SOURCE Main.cpp)
+set(SOURCE Main.cpp TestCacheLine.cpp)
 
 add_executable(cpp-sandbox ${SOURCE})
 
