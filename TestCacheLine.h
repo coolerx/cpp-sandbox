@@ -2,28 +2,29 @@
 
 #include "Common.h"
 
-void TestCacheLine();
-
+// test config values
 constexpr auto RunTime = 5s;
 constexpr auto LoopTime = 50us;
 constexpr int ReaderCount = 16;
 constexpr bool bVerbose = false;
+
+void TestCacheLine();
 
 extern std::atomic_int g_tlCallCount;
 
 class ThreadLocal
 {
 public:
-	ThreadLocal()
+	ThreadLocal() : _order(0)
 	{
-		int prev = std::atomic_fetch_add(&g_tlCallCount, 1);
-		std::printf("ThreadLocal() %d %lld\n", prev + 1, _val);
+		_order = std::atomic_fetch_add(&g_tlCallCount, 1) + 1;
+		std::printf("ThreadLocal %lld created\n", _order);
 	}
 
-	int64 Val() { return _val; }
+	int64 Order() { return _order; }
 
 private:
-	int64 _val;
+	int64 _order;
 };
 
 // inline static thread_local ThreadLocal g_tl;

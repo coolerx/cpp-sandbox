@@ -1,15 +1,11 @@
 #include "TestCacheLine.h"
 
-volatile bool g_bGo = false;
-std::atomic_int g_tlCallCount(0);
-thread_local ThreadLocal g_tl;
-
-struct UnCache
+struct SharedData
 {
     char dummy[68];
     int64* val;
 
-    UnCache()
+    SharedData()
     {
         val = nullptr;
         uint64 address = reinterpret_cast<uint64>(&dummy[0]);
@@ -22,7 +18,11 @@ struct UnCache
             if (!bSameCachelien)
             {
                 val = reinterpret_cast<int64*>(address + i);
-                std::printf("succeeded to set test address %llu %p dummy: %hhd\n", i, val, dummy[0]);
+                if (bVerbose)
+                {
+                    std::printf("succeeded to set test address %llu %p dummy: %hhd\n",
+                      i, val, dummy[0]);
+                }
             }
         }
         if (val == nullptr)
@@ -37,18 +37,10 @@ struct UnCache
     void SetVal(int64 inVal) { *val = inVal; }
 };
 
-UnCache g_uc;
-
-template<class TRep, class TPeriod>
-void SleepLittle(const std::chrono::duration<TRep, TPeriod>& duration)
-{
-    auto start = std::chrono::high_resolution_clock::now();
-    auto end = start + duration;
-    do
-    {
-        std::this_thread::yield();
-    } while (std::chrono::high_resolution_clock::now() < end);
-}
+volatile bool g_bGo = false;
+std::atomic_int g_tlCallCount(0);
+thread_local ThreadLocal g_tl;
+SharedData g_sd;
 
 void WriterMain()
 {
@@ -60,16 +52,16 @@ void WriterMain()
     while (g_bGo)
     {
         val++;
-        g_uc.SetVal(val << 32 | val);
+        g_sd.SetVal(val << 32 | val);
         SleepLittle(LoopTime);
     }
 
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end - start;
 
-    std::printf("writer last global value: %lld %lld\n", g_uc.Val(), val);
+    std::printf("writer last global value: %lld %lld\n", g_sd.Val(), val);
+    std::printf("writer thread local value: %lld\n", g_tl.Order());
     std::printf("writer executed: %lf ms\n", elapsed.count());
-    std::printf("writer thread local value: %lld", g_tl.Val());
 }
 
 void ReaderMain(int id)
@@ -83,7 +75,7 @@ void ReaderMain(int id)
 
     while (g_bGo)
     {
-        int64 curVal = g_uc.Val();
+        int64 curVal = g_sd.Val();
         if ((curVal >> 32) != (curVal & 0x00000000FFFFFFFF))
         {
             lastErrVal = curVal;
@@ -111,12 +103,12 @@ void ReaderMain(int id)
     }
 
     std::printf("reader<%d> last global value: %lld \n", id, prevVal);
-    std::printf("reader<%d> error count: %lld \n", id, errCount);
     if (errCount > 0)
     {
-        std::printf("reader<%d> last error value: %lld %lld\n", id, (lastErrVal >> 32), (lastErrVal & 0x00000000FFFFFFFF));
+        std::printf("reader<%d> error count: %lld last error value: %lld %lld\n", 
+          id, errCount, (lastErrVal >> 32), (lastErrVal & 0x00000000FFFFFFFF));
     }
-    std::printf("reader<%d> thread local value: %lld", id, g_tl.Val());
+    std::printf("reader<%d> thread local value: %lld\n", id, g_tl.Order());
 }
 
 void TestCacheLine()
@@ -130,7 +122,7 @@ void TestCacheLine()
         readers[i].swap(reader);
     }
 
-    std::thread setter(WriterMain);
+    std::thread writer(WriterMain);
 
     g_bGo = true;
 
@@ -138,7 +130,7 @@ void TestCacheLine()
 
     g_bGo = false;
 
-    setter.join();
+    writer.join();
     for (int i = 0; i < ReaderCount; ++i)
     {
         readers[i].join();
@@ -149,11 +141,12 @@ void TestCacheLine()
 
     std::printf("executed: %lf ms %d readers\n", elapsed.count(), ReaderCount);
     std::printf("hardware threads: %u\n", std::thread::hardware_concurrency());
-    std::printf("thread local value: %lld", g_tl.Val());
-    std::printf("sizeof UnCache: %zu\n", sizeof(UnCache));
-    uint64 address = reinterpret_cast<uint64>(g_uc.val);
+    std::printf("thread local value: %lld", g_tl.Order());
+    std::printf("sizeof SharedData: %zu\n", sizeof(SharedData));
+    uint64 address = reinterpret_cast<uint64>(g_sd.val);
     uint64 startCacheline = address / 64;
     uint64 endCacheline = (address + 7) / 64;
     bool bSameCachelien = startCacheline == endCacheline;
-    std::printf("offsetof val: %zu same caheline %c\n", offsetof(UnCache, val), bSameCachelien ? 'y' : 'n');
+    std::printf("offsetof val: %zu same caheline %c\n",
+      offsetof(SharedData, val), bSameCachelien ? 'y' : 'n');
 }
