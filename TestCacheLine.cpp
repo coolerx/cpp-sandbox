@@ -37,10 +37,8 @@ struct SharedData
     void SetVal(int64 inVal) { *val = inVal; }
 };
 
-volatile bool g_bGo = false;
-std::atomic_int g_tlCallCount(0);
-thread_local ThreadLocal g_tl;
-SharedData g_sd;
+static volatile bool g_bGo = false;
+static SharedData g_sd;
 
 void WriterMain()
 {
@@ -60,7 +58,6 @@ void WriterMain()
     std::chrono::duration<double, std::milli> elapsed = end - start;
 
     std::printf("writer last global value: %lld %lld\n", g_sd.Val(), val);
-    std::printf("writer thread local value: %lld\n", g_tl.Order());
     std::printf("writer executed: %lf ms\n", elapsed.count());
 }
 
@@ -102,18 +99,22 @@ void ReaderMain(int id)
         SleepLittle(LoopTime);
     }
 
-    std::printf("reader<%d> last global value: %lld \n", id, prevVal);
+    if (bVerbose)
+    {
+        std::printf("reader<%d> last global value: %lld \n", id, prevVal);
+    }
     if (errCount > 0)
     {
         std::printf("reader<%d> error count: %lld last error value: %lld %lld\n", 
           id, errCount, (lastErrVal >> 32), (lastErrVal & 0x00000000FFFFFFFF));
     }
-    std::printf("reader<%d> thread local value: %lld\n", id, g_tl.Order());
 }
 
 void TestCacheLine()
 {
     auto start = std::chrono::high_resolution_clock::now();
+
+	std::printf(">>> cache line test with %d readers\n", ReaderCount);
 
     std::thread readers[ReaderCount];
     for (int i = 0; i < ReaderCount; ++i)
@@ -139,14 +140,16 @@ void TestCacheLine()
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end - start;
 
-    std::printf("executed: %lf ms %d readers\n", elapsed.count(), ReaderCount);
+    std::printf("executed: %lf ms\n", elapsed.count());
     std::printf("hardware threads: %u\n", std::thread::hardware_concurrency());
-    std::printf("thread local value: %lld", g_tl.Order());
-    std::printf("sizeof SharedData: %zu\n", sizeof(SharedData));
-    uint64 address = reinterpret_cast<uint64>(g_sd.val);
-    uint64 startCacheline = address / 64;
-    uint64 endCacheline = (address + 7) / 64;
-    bool bSameCachelien = startCacheline == endCacheline;
-    std::printf("offsetof val: %zu same caheline %c\n",
-      offsetof(SharedData, val), bSameCachelien ? 'y' : 'n');
+    if (bVerbose)
+    {
+        std::printf("sizeof SharedData: %zu\n", sizeof(SharedData));
+        uint64 address = reinterpret_cast<uint64>(g_sd.val);
+        uint64 startCacheline = address / 64;
+        uint64 endCacheline = (address + 7) / 64;
+        bool bSameCachelien = startCacheline == endCacheline;
+        std::printf("offsetof val: %zu same caheline %c\n",
+        offsetof(SharedData, val), bSameCachelien ? 'y' : 'n');
+    }
 }
