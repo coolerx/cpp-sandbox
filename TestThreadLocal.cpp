@@ -1,6 +1,6 @@
 #include "TestThreadLocal.h"
 
-namespace Config = TestThreadLocalConfig;
+namespace Cfg = TestThreadLocalConfig;
 
 std::atomic_int g_tlCallCountExtern;
 std::atomic_int g_tlCallCountInline;
@@ -10,16 +10,16 @@ void TestThreadLocal()
 {
     auto start = std::chrono::high_resolution_clock::now();
 
-	std::printf(">>> thread local test with %d threads\n", Config::ThreadCount);
+	std::printf(">>> thread local test with %d threads\n", Cfg::ThreadCount);
 
-    std::thread threads[Config::ThreadCount];
-    for (int i = 0; i < Config::ThreadCount; ++i)
+    std::thread threads[Cfg::ThreadCount];
+    for (int i = 0; i < Cfg::ThreadCount; ++i)
     {
         std::thread t(ThreadLocalMain, i + 1);
         threads[i].swap(t);
     }
 
-    for (int i = 0; i < Config::ThreadCount; ++i)
+    for (int i = 0; i < Cfg::ThreadCount; ++i)
     {
         threads[i].join();
     }

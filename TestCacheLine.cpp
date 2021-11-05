@@ -1,5 +1,7 @@
 #include "TestCacheLine.h"
 
+namespace Cfg = TestCacheLineConfig;
+
 struct SharedData
 {
     char dummy[68];
@@ -51,7 +53,7 @@ void WriterMain()
     {
         val++;
         g_sd.SetVal(val << 32 | val);
-        SleepLittle(LoopTime);
+        SleepLittle(Cfg::LoopTime);
     }
 
     auto end = std::chrono::high_resolution_clock::now();
@@ -96,7 +98,7 @@ void ReaderMain(int id)
         }
         loopCount++;
 
-        SleepLittle(LoopTime);
+        SleepLittle(Cfg::LoopTime);
     }
 
     if (bVerbose)
@@ -114,10 +116,10 @@ void TestCacheLine()
 {
     auto start = std::chrono::high_resolution_clock::now();
 
-	std::printf(">>> cache line test with %d readers\n", ReaderCount);
+	std::printf(">>> cache line test with %d readers\n", Cfg::ReaderCount);
 
-    std::thread readers[ReaderCount];
-    for (int i = 0; i < ReaderCount; ++i)
+    std::thread readers[Cfg::ReaderCount];
+    for (int i = 0; i < Cfg::ReaderCount; ++i)
     {
         std::thread reader(ReaderMain, i + 1);
         readers[i].swap(reader);
@@ -127,12 +129,12 @@ void TestCacheLine()
 
     g_bGo = true;
 
-    std::this_thread::sleep_for(RunTime);
+    std::this_thread::sleep_for(Cfg::RunTime);
 
     g_bGo = false;
 
     writer.join();
-    for (int i = 0; i < ReaderCount; ++i)
+    for (int i = 0; i < Cfg::ReaderCount; ++i)
     {
         readers[i].join();
     }
