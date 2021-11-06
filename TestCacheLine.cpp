@@ -5,21 +5,21 @@ namespace Cfg = TestCacheLineConfig;
 struct SharedData
 {
     char dummy[68];
-    int64* val;
+    int64_t* val;
 
     SharedData()
     {
         val = nullptr;
-        uint64 address = reinterpret_cast<uint64>(&dummy[0]);
+        uint64_t address = reinterpret_cast<uint64_t>(&dummy[0]);
 
-        for (uint64 i = 0; i < sizeof(dummy); i += 4)
+        for (uint64_t i = 0; i < sizeof(dummy); i += 4)
         {
-            uint64 startCacheline = (address + i) / 64;
-            uint64 endCacheline = (address + i + 7) / 64;
+            uint64_t startCacheline = (address + i) / 64;
+            uint64_t endCacheline = (address + i + 7) / 64;
             bool bSameCachelien = startCacheline == endCacheline;
             if (!bSameCachelien)
             {
-                val = reinterpret_cast<int64*>(address + i);
+                val = reinterpret_cast<int64_t*>(address + i);
                 if (bVerbose)
                 {
                     std::printf("succeeded to set test address %llu %p dummy: %hhd\n",
@@ -30,13 +30,13 @@ struct SharedData
         if (val == nullptr)
         {
             std::printf("failed to set test address\n");
-            val = reinterpret_cast<int64*>(&dummy[0]);
+            val = reinterpret_cast<int64_t*>(&dummy[0]);
         }
         *val = 0;
     }
 
-    int64 Val() { return *val; }
-    void SetVal(int64 inVal) { *val = inVal; }
+    int64_t Val() { return *val; }
+    void SetVal(int64_t inVal) { *val = inVal; }
 };
 
 static volatile bool g_bGo = false;
@@ -47,7 +47,7 @@ void WriterMain()
     while (!g_bGo);
 
     auto start = std::chrono::high_resolution_clock::now();
-    int64 val = 0;
+    int64_t val = 0;
 
     while (g_bGo)
     {
@@ -67,14 +67,14 @@ void ReaderMain(int id)
 {
     while (!g_bGo);
 
-    int64 prevVal = -1;
-    int64 errCount = 0;
-    int64 loopCount = 0;
-    int64 lastErrVal = -1;
+    int64_t prevVal = -1;
+    int64_t errCount = 0;
+    int64_t loopCount = 0;
+    int64_t lastErrVal = -1;
 
     while (g_bGo)
     {
-        int64 curVal = g_sd.Val();
+        int64_t curVal = g_sd.Val();
         if ((curVal >> 32) != (curVal & 0x00000000FFFFFFFF))
         {
             lastErrVal = curVal;
@@ -147,9 +147,9 @@ void TestCacheLine()
     if (bVerbose)
     {
         std::printf("sizeof SharedData: %zu\n", sizeof(SharedData));
-        uint64 address = reinterpret_cast<uint64>(g_sd.val);
-        uint64 startCacheline = address / 64;
-        uint64 endCacheline = (address + 7) / 64;
+        uint64_t address = reinterpret_cast<uint64_t>(g_sd.val);
+        uint64_t startCacheline = address / 64;
+        uint64_t endCacheline = (address + 7) / 64;
         bool bSameCachelien = startCacheline == endCacheline;
         std::printf("offsetof val: %zu same caheline %c\n",
         offsetof(SharedData, val), bSameCachelien ? 'y' : 'n');

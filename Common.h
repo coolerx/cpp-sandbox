@@ -7,8 +7,6 @@
 
 // using
 using namespace std::chrono_literals;
-using int64 = signed long long;
-using uint64 = unsigned long long;
 
 // macro
 #define is_aligned(POINTER, BYTE_COUNT) \
