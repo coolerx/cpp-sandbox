@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Predef.h"
+
 #include <atomic>
 #include <cstdio>
 #include <thread>

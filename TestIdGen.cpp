@@ -7,6 +7,16 @@ namespace Cfg = TestIdGenConfig;
 static FlakeIdGen g_gen(Cfg::Node);
 static std::set<int64_t> g_threadIssuedIds[Cfg::ThreadCount];
 
+static void PrintFlakeId(const FlakeId& id)
+{
+	std::printf("%lld : node %llu timestamp %llu sequence %llu\n", id.value,
+#if PLATFORM_COMPILER_MSVC
+	  id.node, id.timestamp, id.sequence);
+#else
+	  static_cast<uint64_t>(id.node), id.timestamp, static_cast<uint64_t>(id.sequence));
+#endif
+}
+
 FlakeIdGen::FlakeIdGen(int64_t node) : _node(node)
 {
 	FlakeId initial(_node, EpochInMs(), 0ull);
@@ -55,11 +65,6 @@ uint64_t FlakeIdGen::EpochInMs()
 	auto duration = std::chrono::system_clock::now().time_since_epoch();
 	auto durationInMs = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
 	return static_cast<uint64_t>(durationInMs.count());
-}
-
-static void PrintFlakeId(const FlakeId& id)
-{
-	std::printf("%lld : node %llu timestamp %llu sequence %llu\n", id.value, id.node, id.timestamp, id.sequence);
 }
 
 static void IdGenMain(int threadId)
