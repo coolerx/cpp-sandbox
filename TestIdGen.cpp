@@ -1,5 +1,14 @@
 #include <set>
 #include <map>
+#include <ctime>
+#include <iostream>
+
+#include <time.h>
+#ifndef timegm
+// use _mkgmtime() on windows
+#define timegm _mkgmtime
+#endif
+
 #include "TestIdGen.h"
 
 namespace Cfg = TestIdGenConfig;
@@ -9,7 +18,7 @@ static std::set<int64_t> g_threadIssuedIds[Cfg::ThreadCount];
 
 static void PrintFlakeId(const FlakeId& id)
 {
-	std::printf("%lld : node %llu timestamp %llu sequence %llu\n", id.value,
+	std::printf("%lld : node %llu timestamp 0x%016llX sequence %llu\n", id.value,
 #if PLATFORM_COMPILER_MSVC
 	  id.node, id.timestamp, id.sequence);
 #else
@@ -17,10 +26,47 @@ static void PrintFlakeId(const FlakeId& id)
 #endif
 }
 
+static uint64_t MsSinceEpoch(const std::chrono::system_clock::time_point& until)
+{
+	auto duration = until.time_since_epoch();
+	auto durationInMs = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
+	return static_cast<uint64_t>(durationInMs.count());
+}
+
+static void PrintTimePoint(const char* prefix, const std::chrono::system_clock::time_point& p)
+{
+	std::time_t t = std::chrono::system_clock::to_time_t(p);
+
+	std::cout << prefix << ">> ";
+	std::cout << std::put_time(std::gmtime(&t), "<UTC> %c") << " -- ";
+	std::cout << std::put_time(std::localtime(&t), "<local> %c %Z") << '\n';
+}
+
 FlakeIdGen::FlakeIdGen(int64_t node) : _node(node)
 {
-	FlakeId initial(_node, EpochInMs(), 0ull);
+	std::tm tmEpoch{};
+	tmEpoch.tm_year = Cfg::CustomEpochYear - 1900;
+	tmEpoch.tm_mon = Cfg::CustomEpochMonth - 1;
+	tmEpoch.tm_mday = Cfg::CustomEpochDay;
+	std::time_t timeEpoch = timegm(&tmEpoch);
+	_customEpoch = MsSinceEpoch(std::chrono::system_clock::from_time_t(timeEpoch));
+
+	FlakeId initial(_node, GetTimestamp(), 0ull);
 	_lastId.store(initial.value);
+}
+
+void FlakeIdGen::PrintInfo()
+{
+	FlakeId initial(_lastId.load());
+	std::printf("FlakeIdGen Info\n");
+	PrintFlakeId(initial);
+
+	auto pEpoch = std::chrono::time_point<std::chrono::system_clock>{};
+	std::chrono::milliseconds duration(_customEpoch);
+
+	std::printf("custom epoch: 0x%016llX\n", _customEpoch);
+	PrintTimePoint("original epoch", pEpoch);
+	PrintTimePoint("custom epoch  ", pEpoch + duration);
 }
 
 FlakeId FlakeIdGen::Next()
@@ -29,7 +75,7 @@ FlakeId FlakeIdGen::Next()
 
 	while (true)
 	{
-		uint64_t curTimestamp = EpochInMs();
+		uint64_t curTimestamp = GetTimestamp();
 
 		// try issue with new timestamp
 		if (curTimestamp > old.timestamp)
@@ -54,17 +100,18 @@ FlakeId FlakeIdGen::Next()
 			continue;
 		}
 
-		// sleep minimum and try again
+		// no space in sequence, sleep shortly and try again
 		std::this_thread::yield();
 		old.value = _lastId.load();
 	}
 }
 
-uint64_t FlakeIdGen::EpochInMs()
+uint64_t FlakeIdGen::GetTimestamp() const
 {
-	auto duration = std::chrono::system_clock::now().time_since_epoch();
-	auto durationInMs = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
-	return static_cast<uint64_t>(durationInMs.count());
+	uint64_t msNow = MsSinceEpoch(std::chrono::system_clock::now());
+	uint64_t msElasped = msNow - _customEpoch;
+	
+	return (msElasped >> Cfg::TimeUnitShift);
 }
 
 static void IdGenMain(int threadId)
@@ -99,6 +146,7 @@ void TestIdGen()
 	auto start = std::chrono::high_resolution_clock::now();
 
 	std::printf(">>> id generator test with %d threads\n", Cfg::ThreadCount);
+	g_gen.PrintInfo();
 
 	std::thread threads[Cfg::ThreadCount];
 	for (int i = 0; i < Cfg::ThreadCount; ++i)

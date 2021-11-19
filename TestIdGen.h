@@ -6,6 +6,10 @@ namespace TestIdGenConfig
 {
 	constexpr int64_t Node = 0;
 	constexpr int32_t ThreadCount = 8;
+	constexpr int32_t CustomEpochYear = 2021;
+	constexpr int32_t CustomEpochMonth = 1;
+	constexpr int32_t CustomEpochDay = 1;
+	constexpr int64_t TimeUnitShift = 2; // timestamp in every 4ms (2^2 = 4)
 	constexpr auto RunTime = 100ms;
 }
 
@@ -47,10 +51,12 @@ class FlakeIdGen
 public:
 	FlakeIdGen(int64_t node);
 	FlakeId Next();
+	void PrintInfo();
 
 private:
-	uint64_t EpochInMs();
+	uint64_t GetTimestamp() const;
 	
+	uint64_t _customEpoch;
 	int64_t _node;
 	std::atomic<int64_t> _lastId;
 };
