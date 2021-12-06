@@ -2,6 +2,7 @@
 #include <map>
 #include <ctime>
 #include <iostream>
+#include <iomanip>
 
 #include <time.h>
 #ifndef timegm
@@ -64,7 +65,9 @@ void FlakeIdGen::PrintInfo()
 	auto pEpoch = std::chrono::time_point<std::chrono::system_clock>{};
 	std::chrono::milliseconds duration(_customEpoch);
 
-	std::printf("custom epoch: 0x%016llX\n", _customEpoch);
+	uint64_t msNow = MsSinceEpoch(std::chrono::system_clock::now());
+	std::printf("now: 0x%016llX ms %llu sec\n", msNow, msNow / 1000);
+	std::printf("custom epoch offset in ms: 0x%016llX %llu\n", _customEpoch, _customEpoch);
 	PrintTimePoint("original epoch", pEpoch);
 	PrintTimePoint("custom epoch  ", pEpoch + duration);
 }
