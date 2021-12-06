@@ -5,8 +5,7 @@
 #include <iomanip>
 
 #include <time.h>
-#ifndef timegm
-// use _mkgmtime() on windows
+#if PLATFORM_WINDOWS
 #define timegm _mkgmtime
 #endif
 
