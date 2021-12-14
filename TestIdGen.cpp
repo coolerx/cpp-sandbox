@@ -1,15 +1,4 @@
-#include <set>
-#include <map>
-#include <ctime>
-#include <iostream>
-#include <iomanip>
-
 #include "TestIdGen.h"
-
-#include <time.h>
-#if PLATFORM_WINDOWS
-#define timegm _mkgmtime
-#endif
 
 namespace Cfg = TestIdGenConfig;
 

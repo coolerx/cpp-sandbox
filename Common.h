@@ -6,6 +6,16 @@
 #include <cstdio>
 #include <thread>
 #include <chrono>
+#include <set>
+#include <map>
+#include <ctime>
+#include <iostream>
+#include <iomanip>
+
+#include <time.h>
+#if PLATFORM_WINDOWS
+#define timegm _mkgmtime
+#endif
 
 // using
 using namespace std::chrono_literals;
