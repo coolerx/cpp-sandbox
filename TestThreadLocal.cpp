@@ -4,6 +4,8 @@ namespace Cfg = TestThreadLocalConfig;
 
 std::atomic_int g_tlCallCountExtern;
 std::atomic_int g_tlCallCountInline;
+std::atomic_int g_callCountNormal;
+
 thread_local ThreadLocalData g_tldExtern("extern", &g_tlCallCountExtern);
 
 void TestThreadLocal()
@@ -30,4 +32,8 @@ void TestThreadLocal()
     std::printf("executed: %lf ms\n", elapsed.count());
 	std::printf("extern created %d thread local storage\n", g_tlCallCountExtern.load());
 	std::printf("inline created %d thread local storage\n", g_tlCallCountInline.load());
+
+    // global variable by inline static is not good practice
+	std::printf("inline(no tls) created %d instances, here %d\n",
+      g_callCountNormal.load(), g_tldNormal.Order());
 }

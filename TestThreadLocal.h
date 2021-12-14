@@ -10,6 +10,7 @@ namespace TestThreadLocalConfig
 
 extern std::atomic_int g_tlCallCountExtern;
 extern std::atomic_int g_tlCallCountInline;
+extern std::atomic_int g_callCountNormal;
 
 class ThreadLocalData
 {
@@ -34,6 +35,7 @@ private:
 
 inline static thread_local ThreadLocalData g_tldInline("inline", &g_tlCallCountInline);
 extern thread_local ThreadLocalData g_tldExtern;
+inline static ThreadLocalData g_tldNormal("normal", &g_callCountNormal);
 
 void ThreadLocalMain(int id);
 void TestThreadLocal();
