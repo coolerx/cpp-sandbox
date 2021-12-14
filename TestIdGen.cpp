@@ -4,12 +4,12 @@
 #include <iostream>
 #include <iomanip>
 
+#include "TestIdGen.h"
+
 #include <time.h>
 #if PLATFORM_WINDOWS
 #define timegm _mkgmtime
 #endif
-
-#include "TestIdGen.h"
 
 namespace Cfg = TestIdGenConfig;
 
