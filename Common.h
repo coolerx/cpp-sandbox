@@ -19,6 +19,7 @@
 
 // using
 using namespace std::chrono_literals;
+using namespace std::string_literals;
 
 // macro
 #define is_aligned(POINTER, BYTE_COUNT) \

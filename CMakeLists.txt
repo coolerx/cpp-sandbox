@@ -10,8 +10,13 @@ enable_testing()
 
 set(
   SOURCE_LIST
-  Main.cpp TestCacheLine.cpp TestThreadLocal.cpp TestThreadLocalThread.cpp
-  TestIdGen.cpp)
+  Main.cpp
+  TestCacheLine.cpp
+  TestThreadLocal.cpp
+  TestThreadLocalThread.cpp
+  TestIdGen.cpp
+  TestScope.cpp
+  TestString.cpp)
 
 add_executable(cpp-sandbox ${SOURCE_LIST})
 
