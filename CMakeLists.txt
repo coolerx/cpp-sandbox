@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.2.0)
+cmake_minimum_required(VERSION 3.5.0)
 project(cpp-sandbox VERSION 0.1.0)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -16,7 +16,8 @@ set(
   TestThreadLocalThread.cpp
   TestIdGen.cpp
   TestScope.cpp
-  TestString.cpp)
+  TestString.cpp
+  TestStrongId.cpp)
 
 add_executable(cpp-sandbox ${SOURCE_LIST})
 

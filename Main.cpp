@@ -3,6 +3,7 @@
 #include "TestIdGen.h"
 #include "TestScope.h"
 #include "TestString.h"
+#include "TestStrongId.h"
 
 int main(int, char**) {
     TestCacheLine();
@@ -10,4 +11,5 @@ int main(int, char**) {
     TestIdGen();
     TestScope();
     TestString();
+    TestStrongId();
 }
